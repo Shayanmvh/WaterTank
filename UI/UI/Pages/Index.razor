@@ -1,0 +1,82 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+
+@page "/"
+<h1>Real-Time Statistics Data</h1>
+
+<link href="/css/test-tube.css" rel="stylesheet" />
+
+<div class="tube">
+    <div class="shine"></div>
+    <div class="body">
+        <div class="liquid">
+            <div class="percentage"></div>
+        </div>
+    </div>
+    <div class="meter">
+        <div>100</div>
+        <div>80</div>
+        <div>60</div>
+        <div>40</div>
+        <div>20</div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --tube-title: '@(level * 20)%';
+    }
+
+    .tube .meter::before {
+        content: var(--tube-title);
+        bottom: @(level * 20)%;
+    }
+
+    .tube .meter::after {
+        content: '';
+        bottom: @(level * 20)%;
+    }
+
+    .tube .liquid .percentage {
+        height: @(level * 20)%;
+    }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private string username = string.Empty;
+    private string message = string.Empty;
+    private int level = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Create and start the SignalR connection
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/messageHub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("ReceiveMessage", (data) =>
+        {
+            level = Convert.ToInt16(data);
+            InvokeAsync(StateHasChanged); // Update UI
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private class StatMessage
+    {
+        public string Data { get; set; } = string.Empty;
+    }
+}
