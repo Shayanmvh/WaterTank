@@ -10,7 +10,7 @@ namespace Service
         private readonly Thread _t;
         private readonly HubConnection? _hubConnection;
 
-        public SerialPortService(string com, int port)
+        public SerialPortService(string com, int port, string serverUrl = "https://localhost:7090")
         {
             _serialPort = new SerialPortStream(com, port)
             {
@@ -30,7 +30,7 @@ namespace Service
 
             // Create and start the SignalR connection
             _hubConnection = new HubConnectionBuilder()
-                                .WithUrl("https://localhost:7090/messageHub")
+                                .WithUrl($"{serverUrl}/messageHub")
                                 .WithAutomaticReconnect()
                                 .Build();
         }
